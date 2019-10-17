@@ -197,6 +197,7 @@ function tw_proto.dissector(tvb,pinfo,tree)
   local unknown
   local i
 
+  pinfo.cols.protocol = "TW"
   unknown=0
   pos=0
   stub=tree:add(tw_proto, tvb(), "Teeworlds")
