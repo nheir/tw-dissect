@@ -285,13 +285,24 @@ function tw_proto.dissector(tvb,pinfo,tree)
           stub:add(tvb(pos + msg_pos, length), ("Type: %d, System: %d"):format(msg,sys))
           msg_pos = msg_pos + length
 
-          stub:add(tvb(pos + msg_pos, size - length), ("Data [%d bytes]"):format(size-length))
+
+          if msg == Const.NETMSG_INFO then
+            local stub = stub:add(tvb(pos + msg_pos, size - length), ("Client Info"):format(size-length))
+            local net_version, next_pos = Struct.unpack("s", data, msg_pos+1)
+            stub:add(tvb(pos + msg_pos, next_pos - msg_pos - 1), "NetVersion: " .. net_version)
+            msg_pos = next_pos-1
+            local password, next_pos = Struct.unpack("s", data, msg_pos+1)
+            stub:add(tvb(pos + msg_pos, next_pos - msg_pos - 1), "Password: " .. password)
+            msg_pos = next_pos-1
+            local client_version, length = unpack_int(data, msg_pos+1)
+            stub:add(tvb(pos + msg_pos, length), ("Client: 0x%x"):format(client_version))
+          else
+            stub:add(tvb(pos + msg_pos, size - length), ("Data [%d bytes]"):format(size-length))
+          end
 
           data = data:sub(size + header_size + 1)
           pos = pos + size + header_size
         end
-
-
       end
     end
   end
