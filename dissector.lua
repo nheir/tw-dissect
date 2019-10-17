@@ -277,7 +277,7 @@ function tw_proto.dissector(tvb,pinfo,tree)
           msg_pos = header_size
 
           local stub = stub:add(tvb(pos, size+header_size), "Chunk")
-          stub:add(("Flag: %d, Size: %d"):format(flags, size))
+          stub:append_text((", Flag: %d, Size: %d"):format(flags, size))
 
           local msg_sys, length = unpack_int(data, msg_pos+1)
           local msg = bit.rshift(msg_sys, 1)
@@ -288,14 +288,43 @@ function tw_proto.dissector(tvb,pinfo,tree)
 
           if msg == Const.NETMSG_INFO then
             local stub = stub:add(tvb(pos + msg_pos, size - length), ("Client Info"):format(size-length))
+
             local net_version, next_pos = Struct.unpack("s", data, msg_pos+1)
             stub:add(tvb(pos + msg_pos, next_pos - msg_pos - 1), "NetVersion: " .. net_version)
             msg_pos = next_pos-1
+
             local password, next_pos = Struct.unpack("s", data, msg_pos+1)
             stub:add(tvb(pos + msg_pos, next_pos - msg_pos - 1), "Password: " .. password)
             msg_pos = next_pos-1
+
             local client_version, length = unpack_int(data, msg_pos+1)
             stub:add(tvb(pos + msg_pos, length), ("Client: 0x%x"):format(client_version))
+          elseif msg == Const.NETMSG_MAP_CHANGE then
+            local stub = stub:add(tvb(pos + msg_pos, size - length), ("Map change"):format(size-length))
+
+            local map_name, next_pos = Struct.unpack("s", data, msg_pos+1)
+            stub:add(tvb(pos + msg_pos, next_pos - msg_pos - 1), "Map name: " .. map_name)
+            msg_pos = next_pos-1
+
+            local map_crc, length = unpack_int(data, msg_pos+1)
+            stub:add(tvb(pos + msg_pos, length), ("Map crc: 0x%08x"):format(map_crc))
+            msg_pos = msg_pos+length
+
+            local map_size, length = unpack_int(data, msg_pos+1)
+            stub:add(tvb(pos + msg_pos, length), ("Map size: %d"):format(map_size))
+            msg_pos = msg_pos+length
+
+            local map_chunk_per_request, length = unpack_int(data, msg_pos+1)
+            stub:add(tvb(pos + msg_pos, length), ("Map chunk per request: %d"):format(map_chunk_per_request))
+            msg_pos = msg_pos+length
+
+            local map_chunk_size, length = unpack_int(data, msg_pos+1)
+            stub:add(tvb(pos + msg_pos, length), ("Map chunk size: %d"):format(map_chunk_size))
+            msg_pos = msg_pos+length
+
+            local map_sha256 = string.rep("%02x", 32):format(data:byte(msg_pos+1, msg_pos+1+32))
+            stub:add(tvb(pos + msg_pos, 32), ("Map sha256: %s"):format(map_sha256))
+            msg_pos = msg_pos + 32
           else
             stub:add(tvb(pos + msg_pos, size - length), ("Data [%d bytes]"):format(size-length))
           end
