@@ -325,6 +325,8 @@ function tw_proto.dissector(tvb,pinfo,tree)
             local map_sha256 = string.rep("%02x", 32):format(data:byte(msg_pos+1, msg_pos+1+32))
             stub:add(tvb(pos + msg_pos, 32), ("Map sha256: %s"):format(map_sha256))
             msg_pos = msg_pos + 32
+          elseif msg == Const.NETMSG_READY then
+            local stub = stub:add(tvb(pos + msg_pos, size - length), ("Client Ready"):format(size-length))
           else
             stub:add(tvb(pos + msg_pos, size - length), ("Data [%d bytes]"):format(size-length))
           end
