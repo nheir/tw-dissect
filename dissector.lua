@@ -62,6 +62,47 @@ for i,k in ipairs{
   Const[k] = i
 end
 
+for i,k in ipairs{
+  -- NETMSG_INVALID=0,
+  'NETMSGTYPE_SV_MOTD',
+  'NETMSGTYPE_SV_BROADCAST',
+  'NETMSGTYPE_SV_CHAT',
+  'NETMSGTYPE_SV_TEAM',
+  'NETMSGTYPE_SV_KILLMSG',
+  'NETMSGTYPE_SV_TUNEPARAMS',
+  'NETMSGTYPE_SV_EXTRAPROJECTILE',
+  'NETMSGTYPE_SV_READYTOENTER',
+  'NETMSGTYPE_SV_WEAPONPICKUP',
+  'NETMSGTYPE_SV_EMOTICON',
+  'NETMSGTYPE_SV_VOTECLEAROPTIONS',
+  'NETMSGTYPE_SV_VOTEOPTIONLISTADD',
+  'NETMSGTYPE_SV_VOTEOPTIONADD',
+  'NETMSGTYPE_SV_VOTEOPTIONREMOVE',
+  'NETMSGTYPE_SV_VOTESET',
+  'NETMSGTYPE_SV_VOTESTATUS',
+  'NETMSGTYPE_SV_SERVERSETTINGS',
+  'NETMSGTYPE_SV_CLIENTINFO',
+  'NETMSGTYPE_SV_GAMEINFO',
+  'NETMSGTYPE_SV_CLIENTDROP',
+  'NETMSGTYPE_SV_GAMEMSG',
+  'NETMSGTYPE_DE_CLIENTENTER',
+  'NETMSGTYPE_DE_CLIENTLEAVE',
+  'NETMSGTYPE_CL_SAY',
+  'NETMSGTYPE_CL_SETTEAM',
+  'NETMSGTYPE_CL_SETSPECTATORMODE',
+  'NETMSGTYPE_CL_STARTINFO',
+  'NETMSGTYPE_CL_KILL',
+  'NETMSGTYPE_CL_READYCHANGE',
+  'NETMSGTYPE_CL_EMOTICON',
+  'NETMSGTYPE_CL_VOTE',
+  'NETMSGTYPE_CL_CALLVOTE',
+  'NETMSGTYPE_SV_SKINCHANGE',
+  'NETMSGTYPE_CL_SKINCHANGE',
+  'NUM_NETMSGTYPES'
+} do
+  Const[k] = i
+end
+
 for k,v in pairs{
   NETSENDFLAG_VITAL=1,
   NETSENDFLAG_CONNLESS=2,
@@ -285,50 +326,61 @@ function tw_proto.dissector(tvb,pinfo,tree)
           stub:add(tvb(pos + msg_pos, length), ("Type: %d, System: %d"):format(msg,sys))
           msg_pos = msg_pos + length
 
+          if sys == 1 then
+            if msg == Const.NETMSG_INFO then
+              local stub = stub:add(tvb(pos + msg_pos, size - length), ("Client Info"):format(size-length))
 
-          if msg == Const.NETMSG_INFO then
-            local stub = stub:add(tvb(pos + msg_pos, size - length), ("Client Info"):format(size-length))
+              local net_version, next_pos = Struct.unpack("s", data, msg_pos+1)
+              stub:add(tvb(pos + msg_pos, next_pos - msg_pos - 1), "NetVersion: " .. net_version)
+              msg_pos = next_pos-1
 
-            local net_version, next_pos = Struct.unpack("s", data, msg_pos+1)
-            stub:add(tvb(pos + msg_pos, next_pos - msg_pos - 1), "NetVersion: " .. net_version)
-            msg_pos = next_pos-1
+              local password, next_pos = Struct.unpack("s", data, msg_pos+1)
+              stub:add(tvb(pos + msg_pos, next_pos - msg_pos - 1), "Password: " .. password)
+              msg_pos = next_pos-1
 
-            local password, next_pos = Struct.unpack("s", data, msg_pos+1)
-            stub:add(tvb(pos + msg_pos, next_pos - msg_pos - 1), "Password: " .. password)
-            msg_pos = next_pos-1
+              local client_version, length = unpack_int(data, msg_pos+1)
+              stub:add(tvb(pos + msg_pos, length), ("Client: 0x%x"):format(client_version))
+            elseif msg == Const.NETMSG_MAP_CHANGE then
+              local stub = stub:add(tvb(pos + msg_pos, size - length), ("Map change"):format(size-length))
 
-            local client_version, length = unpack_int(data, msg_pos+1)
-            stub:add(tvb(pos + msg_pos, length), ("Client: 0x%x"):format(client_version))
-          elseif msg == Const.NETMSG_MAP_CHANGE then
-            local stub = stub:add(tvb(pos + msg_pos, size - length), ("Map change"):format(size-length))
+              local map_name, next_pos = Struct.unpack("s", data, msg_pos+1)
+              stub:add(tvb(pos + msg_pos, next_pos - msg_pos - 1), "Map name: " .. map_name)
+              msg_pos = next_pos-1
 
-            local map_name, next_pos = Struct.unpack("s", data, msg_pos+1)
-            stub:add(tvb(pos + msg_pos, next_pos - msg_pos - 1), "Map name: " .. map_name)
-            msg_pos = next_pos-1
+              local map_crc, length = unpack_int(data, msg_pos+1)
+              stub:add(tvb(pos + msg_pos, length), ("Map crc: 0x%08x"):format(map_crc))
+              msg_pos = msg_pos+length
 
-            local map_crc, length = unpack_int(data, msg_pos+1)
-            stub:add(tvb(pos + msg_pos, length), ("Map crc: 0x%08x"):format(map_crc))
-            msg_pos = msg_pos+length
+              local map_size, length = unpack_int(data, msg_pos+1)
+              stub:add(tvb(pos + msg_pos, length), ("Map size: %d"):format(map_size))
+              msg_pos = msg_pos+length
 
-            local map_size, length = unpack_int(data, msg_pos+1)
-            stub:add(tvb(pos + msg_pos, length), ("Map size: %d"):format(map_size))
-            msg_pos = msg_pos+length
+              local map_chunk_per_request, length = unpack_int(data, msg_pos+1)
+              stub:add(tvb(pos + msg_pos, length), ("Map chunk per request: %d"):format(map_chunk_per_request))
+              msg_pos = msg_pos+length
 
-            local map_chunk_per_request, length = unpack_int(data, msg_pos+1)
-            stub:add(tvb(pos + msg_pos, length), ("Map chunk per request: %d"):format(map_chunk_per_request))
-            msg_pos = msg_pos+length
+              local map_chunk_size, length = unpack_int(data, msg_pos+1)
+              stub:add(tvb(pos + msg_pos, length), ("Map chunk size: %d"):format(map_chunk_size))
+              msg_pos = msg_pos+length
 
-            local map_chunk_size, length = unpack_int(data, msg_pos+1)
-            stub:add(tvb(pos + msg_pos, length), ("Map chunk size: %d"):format(map_chunk_size))
-            msg_pos = msg_pos+length
-
-            local map_sha256 = string.rep("%02x", 32):format(data:byte(msg_pos+1, msg_pos+1+32))
-            stub:add(tvb(pos + msg_pos, 32), ("Map sha256: %s"):format(map_sha256))
-            msg_pos = msg_pos + 32
-          elseif msg == Const.NETMSG_READY then
-            local stub = stub:add(tvb(pos + msg_pos, size - length), ("Client Ready"):format(size-length))
+              local map_sha256 = string.rep("%02x", 32):format(data:byte(msg_pos+1, msg_pos+1+32))
+              stub:add(tvb(pos + msg_pos, 32), ("Map sha256: %s"):format(map_sha256))
+              msg_pos = msg_pos + 32
+            elseif msg == Const.NETMSG_READY then
+              local stub = stub:add(tvb(pos + msg_pos, size - length), ("Client Ready"):format(size-length))
+            else
+              stub:add(tvb(pos + msg_pos, size - length), ("Data [%d bytes]"):format(size-length))
+            end
           else
-            stub:add(tvb(pos + msg_pos, size - length), ("Data [%d bytes]"):format(size-length))
+            if msg == Const.NETMSG_INFO then
+              local stub = stub:add(tvb(pos + msg_pos, size - length), ("Sv_Motd"):format(size-length))
+
+              local motd, next_pos = Struct.unpack("s", data, msg_pos+1)
+              stub:add(tvb(pos + msg_pos, next_pos - msg_pos - 1), "Motd: " .. motd)
+              msg_pos = next_pos-1
+            else
+              stub:add(tvb(pos + msg_pos, size - length), ("Data [%d bytes]"):format(size-length))
+            end
           end
 
           data = data:sub(size + header_size + 1)
