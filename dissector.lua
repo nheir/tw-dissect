@@ -140,7 +140,6 @@ function unpack_int(tvb, pos)
   return res, i
 end
 
-
 function tw_proto.dissector(tvb,pinfo,tree)
   local code
   local pos
@@ -157,7 +156,7 @@ function tw_proto.dissector(tvb,pinfo,tree)
 
   local flags = bit.rshift(tvb(0,1):uint(),2)
   if bit.band(flags, Const.NET_PACKETFLAG_CONNLESS) ~= 0 then
-    stub:set_text("Teeworlds Connless packet")
+    stub:append_text(" Connless packet")
     stub:add(tvb(0,1), "Packet Version: " .. bit.band(tvb(0,1):uint(), 0x03))
     stub:add(tvb(1,4), "Recv token: " .. tvb(1,4):uint())
     stub:add(tvb(5,4), "Send token: " .. tvb(5,4):uint())
@@ -225,7 +224,7 @@ function tw_proto.dissector(tvb,pinfo,tree)
     stub:add(tvb(3,4), "Token: " .. token)
 
     if bit.band(flags, Const.NET_PACKETFLAG_CONTROL) ~= 0 then
-      stub:set_text("Teeworlds Control Message")
+      stub:append_text(" Control Message")
       local control_msg = tvb(7,1):uint()
       if control_msg == Const.NET_CTRLMSG_TOKEN then
         stub:set_text("Teeworlds Control Message Token")
@@ -247,17 +246,21 @@ function tw_proto.dissector(tvb,pinfo,tree)
         stub:set_text("Teeworlds Control Message Keepalive")
       end
     else
-      if bit.band(flags, Const.NET_PACKETFLAG_COMPRESSION) then
-        stub:add(tvb(0,1), "Compressed")
-      end
-
       pos = Const.NET_PACKETHEADERSIZE
+      local stub = stub:add(tvb(pos), "Message")
+      local data = tvb:raw(pos)
+      local compressed = bit.band(flags, Const.NET_PACKETFLAG_COMPRESSION) ~= 0
+      if compressed then
+        stub:append_text(" [Compressed]")
+        --data = decompress(data)
+      else
+        local msg_sys, length = unpack_int(tvb, pos)
+        local msg = bit.rshift(msg_sys, 1)
+        local sys = bit.band(msg_sys, 1)
+        stub:append_text((" [Type: %d] [System: %d]"):format(msg,sys))
+        pos = pos + length
 
-      local msg_sys, length = unpack_int(tvb, pos)
-      local msg = bit.rshift(msg_sys, 1)
-      local sys = bit.band(msg_sys, 1)
-      local stub = stub:add(tvb(pos, length), ("Message [Type: %d] [System: %d]"):format(msg,sys))
-      pos = pos + length
+      end
     end
   end
 end
