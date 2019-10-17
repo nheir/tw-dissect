@@ -11,6 +11,112 @@ PACKET_INFO =    "\xff\xff\xff\xffinf3"
 
 NET_CTRLMSG_TOKEN = 5
 
+local Const = {
+  NETMSG_NULL=0
+}
+for i,k in ipairs{
+    -- NETMSG_NULL=0,
+
+    -- the first thing sent by the client
+    -- contains the version info for the client
+    'NETMSG_INFO',
+
+    -- sent by server
+    'NETMSG_MAP_CHANGE',      -- sent when client should switch map
+    'NETMSG_MAP_DATA',        -- map transfer, contains a chunk of the map file
+    'NETMSG_SERVERINFO',
+    'NETMSG_CON_READY',       -- connection is ready, client should send start info
+    'NETMSG_SNAP',            -- normal snapshot, multiple parts
+    'NETMSG_SNAPEMPTY',       -- empty snapshot
+    'NETMSG_SNAPSINGLE',      -- ?
+    'NETMSG_SNAPSMALL',       --
+    'NETMSG_INPUTTIMING',     -- reports how off the input was
+    'NETMSG_RCON_AUTH_ON',    -- rcon authentication enabled
+    'NETMSG_RCON_AUTH_OFF',   -- rcon authentication disabled
+    'NETMSG_RCON_LINE',       -- line that should be printed to the remote console
+    'NETMSG_RCON_CMD_ADD',
+    'NETMSG_RCON_CMD_REM',
+
+    'NETMSG_AUTH_CHALLANGE',  --
+    'NETMSG_AUTH_RESULT',     --
+
+    -- sent by client
+    'NETMSG_READY',           --
+    'NETMSG_ENTERGAME',
+    'NETMSG_INPUT',           -- contains the inputdata from the client
+    'NETMSG_RCON_CMD',        --
+    'NETMSG_RCON_AUTH',       --
+    'NETMSG_REQUEST_MAP_DATA',--
+
+    'NETMSG_AUTH_START',      --
+    'NETMSG_AUTH_RESPONSE',   --
+
+    -- sent by both
+    'NETMSG_PING',
+    'NETMSG_PING_REPLY',
+    'NETMSG_ERROR',
+
+    'NETMSG_MAPLIST_ENTRY_ADD',-- todo 0.8: move up
+    'NETMSG_MAPLIST_ENTRY_REM',
+  } do
+  Const[k] = i
+end
+
+for k,v in pairs{
+  NETSENDFLAG_VITAL=1,
+  NETSENDFLAG_CONNLESS=2,
+  NETSENDFLAG_FLUSH=4,
+} do
+  Const[k] = v
+end
+
+for k,v in pairs{
+  NET_MAX_CHUNKHEADERSIZE = 3,
+
+  -- packets
+  NET_PACKETHEADERSIZE = 7,
+  NET_PACKETHEADERSIZE_CONNLESS = 9, -- NET_PACKETHEADERSIZE + 2,
+  NET_MAX_PACKETHEADERSIZE = 9, -- NET_PACKETHEADERSIZE_CONNLESS,
+
+  NET_MAX_PACKETSIZE = 1400,
+  NET_MAX_PAYLOAD = 1409, -- NET_MAX_PACKETSIZE-NET_MAX_PACKETHEADERSIZE,
+
+  NET_PACKETVERSION=1,
+
+  NET_PACKETFLAG_CONTROL=1,
+  NET_PACKETFLAG_RESEND=2,
+  NET_PACKETFLAG_COMPRESSION=4,
+  NET_PACKETFLAG_CONNLESS=8,
+
+  NET_MAX_PACKET_CHUNKS=256,
+
+  -- token
+  NET_SEEDTIME = 16,
+
+  NET_TOKENCACHE_SIZE = 64,
+  NET_TOKENCACHE_ADDRESSEXPIRY = 16, -- NET_SEEDTIME,
+  NET_TOKENCACHE_PACKETEXPIRY = 5,
+} do
+  Const[k] = v
+end
+
+for k,v in pairs{
+  NET_TOKENFLAG_ALLOWBROADCAST = 1,
+  NET_TOKENFLAG_RESPONSEONLY = 2,
+
+  NET_TOKENREQUEST_DATASIZE = 512,
+
+  NET_CTRLMSG_KEEPALIVE=0,
+  NET_CTRLMSG_CONNECT=1,
+  NET_CTRLMSG_CONNECTACCEPT=2,
+  NET_CTRLMSG_ACCEPT=3,
+  NET_CTRLMSG_CLOSE=4,
+  NET_CTRLMSG_TOKEN=5,
+} do
+  Const[k] = v
+end
+
+
 function unpack_int(tvb, pos)
   local buf = tvb:raw(pos,math.min(5,tvb:len()-pos))
   buf = {buf:byte(1, -1)}
@@ -34,6 +140,7 @@ function unpack_int(tvb, pos)
   return res, i
 end
 
+
 function tw_proto.dissector(tvb,pinfo,tree)
   local code
   local pos
@@ -48,10 +155,10 @@ function tw_proto.dissector(tvb,pinfo,tree)
   pos=0
   stub=tree:add(tw_proto, tvb(), "Teeworlds")
 
-  local flags = tvb(0,1):uint()
-  if bit.band(flags, 0x20) ~= 0 then
-    stub:add(tvb(0,1), "Connless packet")
-    stub:add(tvb(0,1), "Packet Version: " .. bit.band(flags, 0x03))
+  local flags = bit.rshift(tvb(0,1):uint(),2)
+  if bit.band(flags, Const.NET_PACKETFLAG_CONNLESS) ~= 0 then
+    stub:set_text("Teeworlds Connless packet")
+    stub:add(tvb(0,1), "Packet Version: " .. bit.band(tvb(0,1):uint(), 0x03))
     stub:add(tvb(1,4), "Recv token: " .. tvb(1,4):uint())
     stub:add(tvb(5,4), "Send token: " .. tvb(5,4):uint())
 
@@ -108,9 +215,7 @@ function tw_proto.dissector(tvb,pinfo,tree)
         pos = pos + 18
       end
     end
-  end
-  if bit.band(flags, 0x04) ~= 0 then
-    stub:add(tvb(0,1), "Control Message")
+  else
     stub:add(tvb(0,2), "Ack Version: " .. bit.band(tvb(0,2):uint(), 0x03ff))
     stub:add(tvb(2,1), "Number of chunk: " .. tvb(2,1):uint())
     local token = tvb(3,4):int()
@@ -119,9 +224,40 @@ function tw_proto.dissector(tvb,pinfo,tree)
     end
     stub:add(tvb(3,4), "Token: " .. token)
 
-    local control_msg = tvb(7,1):uint()
-    if control_msg == NET_CTRLMSG_TOKEN then
-      stub:add(tvb(8,4), "Request token, send: " .. tvb(8,4):uint())
+    if bit.band(flags, Const.NET_PACKETFLAG_CONTROL) ~= 0 then
+      stub:set_text("Teeworlds Control Message")
+      local control_msg = tvb(7,1):uint()
+      if control_msg == Const.NET_CTRLMSG_TOKEN then
+        stub:set_text("Teeworlds Control Message Token")
+        stub:add(tvb(8,4), "with token: " .. tvb(8,4):uint())
+      elseif control_msg == Const.NET_CTRLMSG_CONNECT then
+        stub:set_text("Teeworlds Control Message Connect")
+        stub:add(tvb(8,4), "with token: " .. tvb(8,4):uint())
+      elseif control_msg == Const.NET_CTRLMSG_CLOSE then
+        stub:set_text("Teeworlds Control Message Close")
+        if tbv:len() > 8 then
+          local string_end = tvb(8):strsize()
+          stub:add(tvb(8, string_end), "Reason: " .. tvb:raw(8, string_end))
+        end
+      elseif control_msg == Const.NET_CTRLMSG_ACCEPT then
+        stub:set_text("Teeworlds Control Message Accept")
+      elseif control_msg == Const.NET_CTRLMSG_CONNECTACCEPT then
+        stub:set_text("Teeworlds Control Message Connect Accept")
+      elseif control_msg == Const.NET_CTRLMSG_KEEPALIVE then
+        stub:set_text("Teeworlds Control Message Keepalive")
+      end
+    else
+      if bit.band(flags, Const.NET_PACKETFLAG_COMPRESSION) then
+        stub:add(tvb(0,1), "Compressed")
+      end
+
+      pos = Const.NET_PACKETHEADERSIZE
+
+      local msg_sys, length = unpack_int(tvb, pos)
+      local msg = bit.rshift(msg_sys, 1)
+      local sys = bit.band(msg_sys, 1)
+      local stub = stub:add(tvb(pos, length), ("Message [Type: %d] [System: %d]"):format(msg,sys))
+      pos = pos + length
     end
   end
 end
