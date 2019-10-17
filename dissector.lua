@@ -106,6 +106,9 @@ for k,v in pairs{
 
   NET_TOKENREQUEST_DATASIZE = 512,
 
+  NET_CHUNKFLAG_VITAL=1,
+  NET_CHUNKFLAG_RESEND=2,
+
   NET_CTRLMSG_KEEPALIVE=0,
   NET_CTRLMSG_CONNECT=1,
   NET_CTRLMSG_CONNECTACCEPT=2,
@@ -116,10 +119,9 @@ for k,v in pairs{
   Const[k] = v
 end
 
-
-function unpack_int(tvb, pos)
-  local buf = tvb:raw(pos,math.min(5,tvb:len()-pos))
-  buf = {buf:byte(1, -1)}
+function unpack_int(buf, pos)
+  pos = pos or 1
+  buf = {buf:byte(pos, pos+4)}
   local i = 1
   local Sign = bit.band(bit.rshift(buf[i], 6), 1)
   local res = bit.band(buf[i], 0x3F)
@@ -138,6 +140,10 @@ function unpack_int(tvb, pos)
 
   res = bit.bxor(res, -Sign)
   return res, i
+end
+
+function unpack_int_from_tvb(tvb, pos)
+  return unpack_int(tvb:raw(pos,math.min(5,tvb:len()-pos)))
 end
 
 function tw_proto.dissector(tvb,pinfo,tree)
@@ -165,14 +171,14 @@ function tw_proto.dissector(tvb,pinfo,tree)
     if packet_header == PACKET_GETINFO then
       local stub = stub:add(tvb(9), "Get Info packet")
       local pos = 17
-      local token, length = unpack_int(tvb, pos)
+      local token, length = unpack_int_from_tvb(tvb, pos)
       stub:add(tvb(pos, length), "Browser token: " .. token)
       pos = pos + length
     elseif packet_header == PACKET_INFO then
       local stub = stub:add(tvb(9), "Info packet")
       local pos = 17
 
-      local token, length = unpack_int(tvb, pos)
+      local token, length = unpack_int_from_tvb(tvb, pos)
       stub:add(tvb(pos, length), "Browser token: " .. token)
       pos = pos + length
 
@@ -215,8 +221,10 @@ function tw_proto.dissector(tvb,pinfo,tree)
       end
     end
   else
-    stub:add(tvb(0,2), "Ack Version: " .. bit.band(tvb(0,2):uint(), 0x03ff))
-    stub:add(tvb(2,1), "Number of chunk: " .. tvb(2,1):uint())
+    local ack = bit.band(tvb(0,2):uint(), 0x03ff)
+    stub:add(tvb(0,2), "Ack Version: " .. ack)
+    local num_chunks = tvb(2,1):uint()
+    stub:add(tvb(2,1), "Number of chunk: " .. num_chunks)
     local token = tvb(3,4):int()
     if token ~= -1 then
       token = tvb(3,4):uint()
@@ -254,11 +262,35 @@ function tw_proto.dissector(tvb,pinfo,tree)
         stub:append_text(" [Compressed]")
         --data = decompress(data)
       else
-        local msg_sys, length = unpack_int(tvb, pos)
-        local msg = bit.rshift(msg_sys, 1)
-        local sys = bit.band(msg_sys, 1)
-        stub:append_text((" [Type: %d] [System: %d]"):format(msg,sys))
-        pos = pos + length
+        local pos = pos
+        for i=1,num_chunks do
+          -- chunk header
+          local b1,b2,b3 = data:byte(1,3)
+          local flags = bit.band(bit.rshift(b1, 6), 0x03)
+          local size = bit.bor(bit.lshift(bit.band(b1, 0x3f),6), bit.band(b2,0x3f))
+          local header_size = 2
+          local sequence = -1
+          if bit.band(flags, Const.NET_CHUNKFLAG_VITAL) ~= 0 then
+            sequence = bit.bor(bit.lshift(bit.band(b2, 0xc0),2),b3)
+            header_size  = 3
+          end
+          msg_pos = header_size
+
+          local stub = stub:add(tvb(pos, size+header_size), "Chunk")
+          stub:add(("Flag: %d, Size: %d"):format(flags, size))
+
+          local msg_sys, length = unpack_int(data, msg_pos+1)
+          local msg = bit.rshift(msg_sys, 1)
+          local sys = bit.band(msg_sys, 1)
+          stub:add(tvb(pos + msg_pos, length), ("Type: %d, System: %d"):format(msg,sys))
+          msg_pos = msg_pos + length
+
+          stub:add(tvb(pos + msg_pos, size - length), ("Data [%d bytes]"):format(size-length))
+
+          data = data:sub(size + header_size + 1)
+          pos = pos + size + header_size
+        end
+
 
       end
     end
