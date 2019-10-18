@@ -886,7 +886,7 @@ function tw_proto.dissector(tvb,pinfo,tree)
         stub:add(tvb(8,4), "with token: " .. tvb(8,4):uint())
       elseif control_msg == Const.NET_CTRLMSG_CLOSE then
         stub:set_text("Teeworlds Control Message Close")
-        if tbv:len() > 8 then
+        if tvb:len() > 8 then
           local string_end = tvb(8):strsize()
           stub:add(tvb(8, string_end), "Reason: " .. tvb:raw(8, string_end))
         end
