@@ -187,6 +187,608 @@ function unpack_int_from_tvb(tvb, pos)
   return unpack_int(tvb:raw(pos,math.min(5,tvb:len()-pos)))
 end
 
+local case_net_msg = {
+  [Const.NETMSGTYPE_SV_MOTD] = function (data, offset)
+    local tree = { name = 'Sv_Motd' }
+    local msg_pos = offset
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_pMessage", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    return tree
+  end,
+  [Const.NETMSGTYPE_SV_BROADCAST] = function (data, offset)
+    local tree = { name = 'Sv_Broadcast' }
+    local msg_pos = offset
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_pMessage", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    return tree
+  end,
+  [Const.NETMSGTYPE_SV_CHAT] = function (data, offset)
+    local tree = { name = 'Sv_Chat' }
+    local msg_pos = offset
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Mode", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_ClientID", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_TargetID", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_pMessage", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    return tree
+  end,
+  [Const.NETMSGTYPE_SV_TEAM] = function (data, offset)
+    local tree = { name = 'Sv_Team' }
+    local msg_pos = offset
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_ClientID", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Team", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Silent", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_CooldownTick", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    return tree
+  end,
+  [Const.NETMSGTYPE_SV_KILLMSG] = function (data, offset)
+    local tree = { name = 'Sv_KillMsg' }
+    local msg_pos = offset
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Killer", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Victim", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Weapon", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_ModeSpecial", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    return tree
+  end,
+  [Const.NETMSGTYPE_SV_TUNEPARAMS] = function (data, offset)
+    local tree = { name = 'Sv_TuneParams' }
+    local msg_pos = offset
+    return tree
+  end,
+  [Const.NETMSGTYPE_SV_EXTRAPROJECTILE] = function (data, offset)
+    local tree = { name = 'Sv_ExtraProjectile' }
+    local msg_pos = offset
+    return tree
+  end,
+  [Const.NETMSGTYPE_SV_READYTOENTER] = function (data, offset)
+    local tree = { name = 'Sv_ReadyToEnter' }
+    local msg_pos = offset
+    return tree
+  end,
+  [Const.NETMSGTYPE_SV_WEAPONPICKUP] = function (data, offset)
+    local tree = { name = 'Sv_WeaponPickup' }
+    local msg_pos = offset
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Weapon", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    return tree
+  end,
+  [Const.NETMSGTYPE_SV_EMOTICON] = function (data, offset)
+    local tree = { name = 'Sv_Emoticon' }
+    local msg_pos = offset
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_ClientID", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Emoticon", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    return tree
+  end,
+  [Const.NETMSGTYPE_SV_VOTECLEAROPTIONS] = function (data, offset)
+    local tree = { name = 'Sv_VoteClearOptions' }
+    local msg_pos = offset
+    return tree
+  end,
+  [Const.NETMSGTYPE_SV_VOTEOPTIONLISTADD] = function (data, offset)
+    local tree = { name = 'Sv_VoteOptionListAdd' }
+    local msg_pos = offset
+    return tree
+  end,
+  [Const.NETMSGTYPE_SV_VOTEOPTIONADD] = function (data, offset)
+    local tree = { name = 'Sv_VoteOptionAdd' }
+    local msg_pos = offset
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_pDescription", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    return tree
+  end,
+  [Const.NETMSGTYPE_SV_VOTEOPTIONREMOVE] = function (data, offset)
+    local tree = { name = 'Sv_VoteOptionRemove' }
+    local msg_pos = offset
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_pDescription", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    return tree
+  end,
+  [Const.NETMSGTYPE_SV_VOTESET] = function (data, offset)
+    local tree = { name = 'Sv_VoteSet' }
+    local msg_pos = offset
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_ClientID", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Type", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Timeout", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_pDescription", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_pReason", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    return tree
+  end,
+  [Const.NETMSGTYPE_SV_VOTESTATUS] = function (data, offset)
+    local tree = { name = 'Sv_VoteStatus' }
+    local msg_pos = offset
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Yes", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_No", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Pass", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Total", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    return tree
+  end,
+  [Const.NETMSGTYPE_SV_SERVERSETTINGS] = function (data, offset)
+    local tree = { name = 'Sv_ServerSettings' }
+    local msg_pos = offset
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_KickVote", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_KickMin", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_SpecVote", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_TeamLock", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_TeamBalance", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_PlayerSlots", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    return tree
+  end,
+  [Const.NETMSGTYPE_SV_CLIENTINFO] = function (data, offset)
+    local tree = { name = 'Sv_ClientInfo' }
+    local msg_pos = offset
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_ClientID", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Local", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Team", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_pName", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_pClan", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Country", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_apSkinPartNames[0]", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_apSkinPartNames[1]", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_apSkinPartNames[2]", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_apSkinPartNames[3]", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_apSkinPartNames[4]", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_apSkinPartNames[5]", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aUseCustomColors[0]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aUseCustomColors[1]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aUseCustomColors[2]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aUseCustomColors[3]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aUseCustomColors[4]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aUseCustomColors[5]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aSkinPartColors[0]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aSkinPartColors[1]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aSkinPartColors[2]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aSkinPartColors[3]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aSkinPartColors[4]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aSkinPartColors[5]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Silent", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    return tree
+  end,
+  [Const.NETMSGTYPE_SV_GAMEINFO] = function (data, offset)
+    local tree = { name = 'Sv_GameInfo' }
+    local msg_pos = offset
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_GameFlags", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_ScoreLimit", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_TimeLimit", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_MatchNum", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_MatchCurrent", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    return tree
+  end,
+  [Const.NETMSGTYPE_SV_CLIENTDROP] = function (data, offset)
+    local tree = { name = 'Sv_ClientDrop' }
+    local msg_pos = offset
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_ClientID", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_pReason", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Silent", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    return tree
+  end,
+  [Const.NETMSGTYPE_SV_GAMEMSG] = function (data, offset)
+    local tree = { name = 'Sv_GameMsg' }
+    local msg_pos = offset
+    return tree
+  end,
+  [Const.NETMSGTYPE_DE_CLIENTENTER] = function (data, offset)
+    local tree = { name = 'De_ClientEnter' }
+    local msg_pos = offset
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_pName", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_ClientID", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Team", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    return tree
+  end,
+  [Const.NETMSGTYPE_DE_CLIENTLEAVE] = function (data, offset)
+    local tree = { name = 'De_ClientLeave' }
+    local msg_pos = offset
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_pName", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_ClientID", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_pReason", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    return tree
+  end,
+  [Const.NETMSGTYPE_CL_SAY] = function (data, offset)
+    local tree = { name = 'Cl_Say' }
+    local msg_pos = offset
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Mode", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Target", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_pMessage", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    return tree
+  end,
+  [Const.NETMSGTYPE_CL_SETTEAM] = function (data, offset)
+    local tree = { name = 'Cl_SetTeam' }
+    local msg_pos = offset
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Team", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    return tree
+  end,
+  [Const.NETMSGTYPE_CL_SETSPECTATORMODE] = function (data, offset)
+    local tree = { name = 'Cl_SetSpectatorMode' }
+    local msg_pos = offset
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_SpecMode", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_SpectatorID", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    return tree
+  end,
+  [Const.NETMSGTYPE_CL_STARTINFO] = function (data, offset)
+    local tree = { name = 'Cl_StartInfo' }
+    local msg_pos = offset
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_pName", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_pClan", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Country", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_apSkinPartNames[0]", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_apSkinPartNames[1]", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_apSkinPartNames[2]", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_apSkinPartNames[3]", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_apSkinPartNames[4]", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_apSkinPartNames[5]", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aUseCustomColors[0]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aUseCustomColors[1]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aUseCustomColors[2]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aUseCustomColors[3]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aUseCustomColors[4]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aUseCustomColors[5]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aSkinPartColors[0]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aSkinPartColors[1]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aSkinPartColors[2]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aSkinPartColors[3]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aSkinPartColors[4]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aSkinPartColors[5]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    return tree
+  end,
+  [Const.NETMSGTYPE_CL_KILL] = function (data, offset)
+    local tree = { name = 'Cl_Kill' }
+    local msg_pos = offset
+    return tree
+  end,
+  [Const.NETMSGTYPE_CL_READYCHANGE] = function (data, offset)
+    local tree = { name = 'Cl_ReadyChange' }
+    local msg_pos = offset
+    return tree
+  end,
+  [Const.NETMSGTYPE_CL_EMOTICON] = function (data, offset)
+    local tree = { name = 'Cl_Emoticon' }
+    local msg_pos = offset
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Emoticon", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    return tree
+  end,
+  [Const.NETMSGTYPE_CL_VOTE] = function (data, offset)
+    local tree = { name = 'Cl_Vote' }
+    local msg_pos = offset
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Vote", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    return tree
+  end,
+  [Const.NETMSGTYPE_CL_CALLVOTE] = function (data, offset)
+    local tree = { name = 'Cl_CallVote' }
+    local msg_pos = offset
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_Type", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_Value", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_Reason", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_Force", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    return tree
+  end,
+  [Const.NETMSGTYPE_SV_SKINCHANGE] = function (data, offset)
+    local tree = { name = 'Sv_SkinChange' }
+    local msg_pos = offset
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_ClientID", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_apSkinPartNames[0]", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_apSkinPartNames[1]", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_apSkinPartNames[2]", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_apSkinPartNames[3]", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_apSkinPartNames[4]", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_apSkinPartNames[5]", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aUseCustomColors[0]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aUseCustomColors[1]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aUseCustomColors[2]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aUseCustomColors[3]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aUseCustomColors[4]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aUseCustomColors[5]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aSkinPartColors[0]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aSkinPartColors[1]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aSkinPartColors[2]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aSkinPartColors[3]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aSkinPartColors[4]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aSkinPartColors[5]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    return tree
+  end,
+  [Const.NETMSGTYPE_CL_SKINCHANGE] = function (data, offset)
+    local tree = { name = 'Cl_SkinChange' }
+    local msg_pos = offset
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_apSkinPartNames[0]", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_apSkinPartNames[1]", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_apSkinPartNames[2]", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_apSkinPartNames[3]", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_apSkinPartNames[4]", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "m_apSkinPartNames[5]", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aUseCustomColors[0]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aUseCustomColors[1]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aUseCustomColors[2]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aUseCustomColors[3]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aUseCustomColors[4]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aUseCustomColors[5]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aSkinPartColors[0]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aSkinPartColors[1]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aSkinPartColors[2]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aSkinPartColors[3]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aSkinPartColors[4]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_aSkinPartColors[5]", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    return tree
+  end,
+}
+
 function tw_proto.dissector(tvb,pinfo,tree)
   local code
   local pos
@@ -373,12 +975,12 @@ function tw_proto.dissector(tvb,pinfo,tree)
               stub:add(tvb(pos + msg_pos, size - length), ("Data [%d bytes]"):format(size-length))
             end
           else
-            if msg == Const.NETMSG_INFO then
-              local stub = stub:add(tvb(pos + msg_pos, size - length), ("Sv_Motd"):format(size-length))
-
-              local motd, next_pos = Struct.unpack("s", data, msg_pos+1)
-              stub:add(tvb(pos + msg_pos, next_pos - msg_pos - 1), "Motd: " .. motd)
-              msg_pos = next_pos-1
+            if case_net_msg[msg] then
+              local tree = case_net_msg[msg](data, header_size + length)
+              local stub = stub:add(tvb(pos + header_size + length, size - length), tree.name)
+              for _, field in ipairs(tree) do
+                stub:add(tvb(pos + field.start, field.size), field.name .. ': ' .. field.value)
+              end
             else
               stub:add(tvb(pos + msg_pos, size - length), ("Data [%d bytes]"):format(size-length))
             end
