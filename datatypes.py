@@ -265,6 +265,23 @@ class NetMessage(NetObject):
 		lines += ["end,"]
 		return lines
 
+class NetSys(NetObject):
+	def __init__(self, name, variables):
+		NetObject.__init__(self, name, variables)
+		self.enum_name = "NETMSG_%s" % self.name.upper()
+	def emit_unpack(self):
+		lines = []
+		lines += ["[Const.%s] = function (data, offset)" % self.enum_name]
+		lines += ["\tlocal tree = { name = '%s' }" % (self.name,)]
+		lines += ["\tlocal msg_pos = offset"]
+		for v in self.variables:
+			lines += ["\t"+line for line in v.emit_unpack()]
+		# for v in self.variables:
+		# 	lines += ["\t"+line for line in v.emit_unpack_check()]
+		lines += ["\treturn tree"]
+		lines += ["end,"]
+		return lines
+
 class NetVariable:
 	def __init__(self, name):
 		self.name = name
@@ -281,6 +298,17 @@ class NetString(NetVariable):
 		lines += ['local value, next_pos = Struct.unpack("s", data, msg_pos+1)']
 		lines += ['table.insert(tree, { name = "%s", start = msg_pos, size = next_pos - msg_pos - 1, value = value })' % (self.name)]
 		lines += ['msg_pos = next_pos-1']
+		return lines
+
+class NetRawString(NetVariable):
+	def __init__(self, name, size):
+		NetVariable.__init__(self, name)
+		self.size = size
+	def emit_unpack(self):
+		lines = []
+		lines += ['local value = data:sub(msg_pos+1, msg_pos+%d)' % self.size]
+		lines += ['table.insert(tree, { name = "%s", start = msg_pos, size = %d, value = value })' % (self.name, self.size)]
+		lines += ['msg_pos = msg_pos + %d' % self.size]
 		return lines
 
 class NetStringStrict(NetVariable):

@@ -433,3 +433,77 @@ Messages = [
 		NetArray(NetIntAny("m_aSkinPartColors"), 6),
 	]),
 ]
+
+System = [
+	NetSys("Input", [
+		NetIntAny("m_AckGameTick"),
+		NetIntAny("m_PredTick"),
+		NetIntAny("Size")
+		# ...
+	]),
+	NetSys("InputTiming", [
+		NetIntAny("IntendedTick"),
+		NetIntAny("TimeLeft")
+	]),
+	NetSys("Info", [
+		NetString("NetVersion"),
+		NetString("Password"),
+		NetIntAny("ClientVersion")
+	]),
+	NetSys("EnterGame", []),
+	NetSys("Ready", []),
+	NetSys("Con_Ready", []),
+	NetSys("Map_Change", [
+		NetString("Map name"),
+		NetIntAny("Map CRC"),
+		NetIntAny("Map size"),
+		NetIntAny("Map chunk per request"),
+		NetIntAny("Map chunk size"),
+		NetRawString("Map Sha256", 32)
+	]),
+	NetSys("Request_Map_Data", []),
+	NetSys("Map_Data", []),
+	NetSys("Rcon_Auth", [
+		NetString("Password")
+	]),
+	NetSys("Rcon_Auth_On", []),
+	NetSys("Rcon_Auth_Off", []),
+	NetSys("Rcon_Line", [
+		NetString("Line")
+	]),
+	NetSys("Rcon_Cmd", [
+		NetString("Command")
+	]),
+	NetSys("Rcon_Cmd_Add", [
+		NetString("Name"),
+		NetString("Help"),
+		NetString("Params")
+	]),
+	NetSys("Maplist_Entry_Add", [
+		NetString("Name")
+	]),
+	NetSys("Maplist_Entry_Rem", [
+		NetString("Name")
+	]),
+	NetSys("Ping", []),
+	NetSys("Ping_Reply", []),
+	NetSys("Snap", [
+		NetIntAny("GameTick"),
+		NetIntAny("Relative DeltaTick"),
+		NetIntAny("NumParts"),
+		NetIntAny("Part"),
+		NetIntAny("Crc"),
+		NetIntAny("PartSize")
+	]),
+	NetSys("SnapSingle", [
+		NetIntAny("GameTick"),
+		NetIntAny("Relative DeltaTick"),
+		NetIntAny("Crc"),
+		NetIntAny("Size")
+	]),
+	NetSys("SnapEmpty", [
+		NetIntAny("GameTick"),
+		NetIntAny("Relative DeltaTick")
+	]),
+	NetSys("ServerInfo", [])
+]

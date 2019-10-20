@@ -187,7 +187,7 @@ function unpack_int_from_tvb(tvb, pos)
   return unpack_int(tvb:raw(pos,math.min(5,tvb:len()-pos)))
 end
 
-local case_net_msg = {
+local case_net_msg_type = {
   [Const.NETMSGTYPE_SV_MOTD] = function (data, offset)
     local tree = { name = 'Sv_Motd' }
     local msg_pos = offset
@@ -789,6 +789,226 @@ local case_net_msg = {
   end,
 }
 
+local case_net_msg_system = {
+  [Const.NETMSG_INPUT] = function (data, offset)
+    local tree = { name = 'Input' }
+    local msg_pos = offset
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_AckGameTick", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "m_PredTick", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "Size", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    return tree
+  end,
+  [Const.NETMSG_INPUTTIMING] = function (data, offset)
+    local tree = { name = 'InputTiming' }
+    local msg_pos = offset
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "IntendedTick", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "TimeLeft", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    return tree
+  end,
+  [Const.NETMSG_INFO] = function (data, offset)
+    local tree = { name = 'Info' }
+    local msg_pos = offset
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "NetVersion", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "Password", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "ClientVersion", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    return tree
+  end,
+  [Const.NETMSG_ENTERGAME] = function (data, offset)
+    local tree = { name = 'EnterGame' }
+    local msg_pos = offset
+    return tree
+  end,
+  [Const.NETMSG_READY] = function (data, offset)
+    local tree = { name = 'Ready' }
+    local msg_pos = offset
+    return tree
+  end,
+  [Const.NETMSG_CON_READY] = function (data, offset)
+    local tree = { name = 'Con_Ready' }
+    local msg_pos = offset
+    return tree
+  end,
+  [Const.NETMSG_MAP_CHANGE] = function (data, offset)
+    local tree = { name = 'Map_Change' }
+    local msg_pos = offset
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "Map name", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "Map CRC", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "Map size", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "Map chunk per request", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "Map chunk size", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value = data:sub(msg_pos+1, msg_pos+32)
+    table.insert(tree, { name = "Map Sha256", start = msg_pos, size = 32, value = value })
+    msg_pos = msg_pos + 32
+    return tree
+  end,
+  [Const.NETMSG_REQUEST_MAP_DATA] = function (data, offset)
+    local tree = { name = 'Request_Map_Data' }
+    local msg_pos = offset
+    return tree
+  end,
+  [Const.NETMSG_MAP_DATA] = function (data, offset)
+    local tree = { name = 'Map_Data' }
+    local msg_pos = offset
+    return tree
+  end,
+  [Const.NETMSG_RCON_AUTH] = function (data, offset)
+    local tree = { name = 'Rcon_Auth' }
+    local msg_pos = offset
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "Password", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    return tree
+  end,
+  [Const.NETMSG_RCON_AUTH_ON] = function (data, offset)
+    local tree = { name = 'Rcon_Auth_On' }
+    local msg_pos = offset
+    return tree
+  end,
+  [Const.NETMSG_RCON_AUTH_OFF] = function (data, offset)
+    local tree = { name = 'Rcon_Auth_Off' }
+    local msg_pos = offset
+    return tree
+  end,
+  [Const.NETMSG_RCON_LINE] = function (data, offset)
+    local tree = { name = 'Rcon_Line' }
+    local msg_pos = offset
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "Line", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    return tree
+  end,
+  [Const.NETMSG_RCON_CMD] = function (data, offset)
+    local tree = { name = 'Rcon_Cmd' }
+    local msg_pos = offset
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "Command", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    return tree
+  end,
+  [Const.NETMSG_RCON_CMD_ADD] = function (data, offset)
+    local tree = { name = 'Rcon_Cmd_Add' }
+    local msg_pos = offset
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "Name", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "Help", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "Params", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    return tree
+  end,
+  [Const.NETMSG_MAPLIST_ENTRY_ADD] = function (data, offset)
+    local tree = { name = 'Maplist_Entry_Add' }
+    local msg_pos = offset
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "Name", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    return tree
+  end,
+  [Const.NETMSG_MAPLIST_ENTRY_REM] = function (data, offset)
+    local tree = { name = 'Maplist_Entry_Rem' }
+    local msg_pos = offset
+    local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+    table.insert(tree, { name = "Name", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+    msg_pos = next_pos-1
+    return tree
+  end,
+  [Const.NETMSG_PING] = function (data, offset)
+    local tree = { name = 'Ping' }
+    local msg_pos = offset
+    return tree
+  end,
+  [Const.NETMSG_PING_REPLY] = function (data, offset)
+    local tree = { name = 'Ping_Reply' }
+    local msg_pos = offset
+    return tree
+  end,
+  [Const.NETMSG_SNAP] = function (data, offset)
+    local tree = { name = 'Snap' }
+    local msg_pos = offset
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "GameTick", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "Relative DeltaTick", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "NumParts", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "Part", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "Crc", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "PartSize", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    return tree
+  end,
+  [Const.NETMSG_SNAPSINGLE] = function (data, offset)
+    local tree = { name = 'SnapSingle' }
+    local msg_pos = offset
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "GameTick", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "Relative DeltaTick", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "Crc", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "Size", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    return tree
+  end,
+  [Const.NETMSG_SNAPEMPTY] = function (data, offset)
+    local tree = { name = 'SnapEmpty' }
+    local msg_pos = offset
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "GameTick", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    local value, length = unpack_int(data, msg_pos+1)
+    table.insert(tree, { name = "Relative DeltaTick", start = msg_pos, size = length, value = value })
+    msg_pos = msg_pos + length
+    return tree
+  end,
+  [Const.NETMSG_SERVERINFO] = function (data, offset)
+    local tree = { name = 'ServerInfo' }
+    local msg_pos = offset
+    return tree
+  end,
+}
+
 -- Huffman
 local TwHuffman
 do
@@ -1204,12 +1424,18 @@ function tw_proto.dissector(tvb,pinfo,tree)
               msg_pos = msg_pos + 32
             elseif msg == Const.NETMSG_READY then
               local stub = stub:add(tvb(pos + msg_pos, size - length), ("Client Ready"):format(size-length))
+            elseif case_net_msg_system[msg] then
+              local tree = case_net_msg_system[msg](data, header_size + length)
+              local stub = stub:add(tvb(pos + header_size + length, size - length), tree.name)
+              for _, field in ipairs(tree) do
+                stub:add(tvb(pos + field.start, field.size), field.name .. ': ' .. field.value)
+              end
             else
               stub:add(tvb(pos + msg_pos, size - length), ("Data [%d bytes]"):format(size-length))
             end
           else
-            if case_net_msg[msg] then
-              local tree = case_net_msg[msg](data, header_size + length)
+            if case_net_msg_type[msg] then
+              local tree = case_net_msg_type[msg](data, header_size + length)
               local stub = stub:add(tvb(pos + header_size + length, size - length), tree.name)
               for _, field in ipairs(tree) do
                 stub:add(tvb(pos + field.start, field.size), field.name .. ': ' .. field.value)
