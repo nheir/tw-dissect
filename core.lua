@@ -139,78 +139,28 @@ function tw_proto.dissector(tvb,pinfo,tree)
             sequence = bit.bor(bit.lshift(bit.band(b2, 0xc0),2),b3)
             header_size  = 3
           end
-          msg_pos = header_size
 
           local stub = stub:add(tvb(pos, size+header_size), "Chunk")
           stub:append_text((", Flag: %d, Size: %d"):format(flags, size))
 
-          local msg_sys, length = unpack_int(data, msg_pos+1)
+          local msg_sys, length = unpack_int(data, header_size+1)
           local msg = bit.rshift(msg_sys, 1)
           local sys = bit.band(msg_sys, 1)
-          stub:add(tvb(pos + msg_pos, length), ("Type: %d, System: %d"):format(msg,sys))
-          msg_pos = msg_pos + length
+          stub:add(tvb(pos + header_size, length), ("Type: %d, System: %d"):format(msg,sys))
 
-          if sys == 1 then
-            if msg == Const.NETMSG_INFO then
-              local stub = stub:add(tvb(pos + msg_pos, size - length), ("Client Info"):format(size-length))
+          local tree = {}
+          if sys == 1 and case_net_msg_system[msg] then
+            tree = case_net_msg_system[msg](data, header_size + length)
+          elseif sys == 0 and case_net_msg_type[msg] then
+            tree = case_net_msg_type[msg](data, header_size + length)
+          end
+          tree.start = header_size + length
+          tree.size = size - length
 
-              local net_version, next_pos = Struct.unpack("s", data, msg_pos+1)
-              stub:add(tvb(pos + msg_pos, next_pos - msg_pos - 1), "NetVersion: " .. net_version)
-              msg_pos = next_pos-1
-
-              local password, next_pos = Struct.unpack("s", data, msg_pos+1)
-              stub:add(tvb(pos + msg_pos, next_pos - msg_pos - 1), "Password: " .. password)
-              msg_pos = next_pos-1
-
-              local client_version, length = unpack_int(data, msg_pos+1)
-              stub:add(tvb(pos + msg_pos, length), ("Client: 0x%x"):format(client_version))
-            elseif false and msg == Const.NETMSG_MAP_CHANGE then
-              local stub = stub:add(tvb(pos + msg_pos, size - length), ("Map change"):format(size-length))
-
-              local map_name, next_pos = Struct.unpack("s", data, msg_pos+1)
-              stub:add(tvb(pos + msg_pos, next_pos - msg_pos - 1), "Map name: " .. map_name)
-              msg_pos = next_pos-1
-
-              local map_crc, length = unpack_int(data, msg_pos+1)
-              stub:add(tvb(pos + msg_pos, length), ("Map crc: 0x%08x"):format(map_crc))
-              msg_pos = msg_pos+length
-
-              local map_size, length = unpack_int(data, msg_pos+1)
-              stub:add(tvb(pos + msg_pos, length), ("Map size: %d"):format(map_size))
-              msg_pos = msg_pos+length
-
-              local map_chunk_per_request, length = unpack_int(data, msg_pos+1)
-              stub:add(tvb(pos + msg_pos, length), ("Map chunk per request: %d"):format(map_chunk_per_request))
-              msg_pos = msg_pos+length
-
-              local map_chunk_size, length = unpack_int(data, msg_pos+1)
-              stub:add(tvb(pos + msg_pos, length), ("Map chunk size: %d"):format(map_chunk_size))
-              msg_pos = msg_pos+length
-
-              local map_sha256 = string.rep("%02x", 32):format(data:byte(msg_pos+1, msg_pos+1+32))
-              stub:add(tvb(pos + msg_pos, 32), ("Map sha256: %s"):format(map_sha256))
-              msg_pos = msg_pos + 32
-            elseif msg == Const.NETMSG_READY then
-              local stub = stub:add(tvb(pos + msg_pos, size - length), ("Client Ready"):format(size-length))
-            elseif case_net_msg_system[msg] then
-              local tree = case_net_msg_system[msg](data, header_size + length)
-              local stub = stub:add(tvb(pos + header_size + length, size - length), tree.name)
-              for _, field in ipairs(tree) do
-                stub:add(tvb(pos + field.start, field.size), field.name .. ': ' .. field.value)
-              end
-            else
-              stub:add(tvb(pos + msg_pos, size - length), ("Data [%d bytes]"):format(size-length))
-            end
+          if tree.name then
+            tree_to_treeitem(tree, stub, tvb, pos, true)
           else
-            if case_net_msg_type[msg] then
-              local tree = case_net_msg_type[msg](data, header_size + length)
-              local stub = stub:add(tvb(pos + header_size + length, size - length), tree.name)
-              for _, field in ipairs(tree) do
-                stub:add(tvb(pos + field.start, field.size), field.name .. ': ' .. field.value)
-              end
-            else
-              stub:add(tvb(pos + msg_pos, size - length), ("Data [%d bytes]"):format(size-length))
-            end
+            stub:add(tvb(pos + tree.start, tree.size), ("Data [%d bytes]"):format(size-length))
           end
 
           data = data:sub(size + header_size + 1)

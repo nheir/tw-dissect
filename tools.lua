@@ -25,4 +25,20 @@ end
 function unpack_int_from_tvb(tvb, pos)
   return unpack_int(tvb:raw(pos,math.min(5,tvb:len()-pos)))
 end
+
+function tree_to_treeitem(tree, stub, tvb, offset, default)
+  local stub = stub:add(tvb(offset + tree.start, tree.size), tree.name)
+  local last_pos = 0
+  for _, field in ipairs(tree) do
+    if type(field.value) == 'table' then
+      tree_tp_treeitem(field, stub, tvb, offset, default)
+    else
+      stub:add(tvb(offset + field.start, field.size), field.name .. ': ' .. field.value)
+    end
+    last_pos = field.start + field.size
+  end
+  if default and last_pos < tree.start + tree.size then
+    stub:add(tvb(offset + last_pos, tree.start + tree.size - last_pos), ("Data [%d bytes]"):format(tree.start + tree.size - last_pos))
+  end
+end
 -- Tools end
