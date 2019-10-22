@@ -30,8 +30,8 @@ function tree_to_treeitem(tree, stub, tvb, offset, default)
   local stub = stub:add(tvb(offset + tree.start, tree.size), tree.name)
   local last_pos = tree.start
   for _, field in ipairs(tree) do
-    if type(field.value) == 'table' then
-      tree_tp_treeitem(field, stub, tvb, offset, default)
+    if type(field.value) == 'nil' then
+      tree_to_treeitem(field, stub, tvb, offset, default)
     else
       stub:add(tvb(offset + field.start, field.size), field.name .. ': ' .. field.value)
     end

@@ -31,32 +31,44 @@ function tw_proto.dissector(tvb,pinfo,tree)
       stub:add(tvb(pos, length), "Browser token: " .. token)
       pos = pos + length
     elseif packet_header == Const.PACKET_INFO then
-      local stub = stub:add(tvb(9), "Info packet")
-      local pos = 17
+      local pos = 9
+      local data = tvb:raw(pos)
+      local token, length = unpack_int_from_tvb(tvb, pos+8)
+      local field_token = {name = "Browser token: ", start = 8, size = length, value = token}
 
-      local token, length = unpack_int_from_tvb(tvb, pos)
-      stub:add(tvb(pos, length), "Browser token: " .. token)
-      pos = pos + length
+      local data = tvb:raw(pos)
+      local tree = case_net_msg_system[Const.NETMSG_SERVERINFO](data, field_token.start + field_token.size, #data - field_token.start - field_token.size)
+      tree.size = #data - field_token.start
+      tree.start = field_token.start
+      table.insert(tree, 1, field_token)
 
-      local version = tvb(pos):stringz()
-      stub:add(tvb(pos, tvb(pos):strsize()), "Version: " .. version)
-      pos = pos + tvb(pos):strsize()
+      local num_players = tree[9].value
+      local offset = tree[#tree].start + tree[#tree].size
+      local msg_pos = offset
+      if num_players > 0 then
+        for i=1,num_players do
+          local player = {name = string.format("Player[%d]", i-1), start = msg_pos}
+          local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+          table.insert(player, { name = "Name", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+          msg_pos = next_pos-1
+          local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+          table.insert(player, { name = "Clan", start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+          msg_pos = next_pos-1
+          local value, length = unpack_int(data, msg_pos+1)
+          table.insert(player, { name = "Country", start = msg_pos, size = length, value = value })
+          msg_pos = msg_pos + length
+          local value, length = unpack_int(data, msg_pos+1)
+          table.insert(player, { name = "Score", start = msg_pos, size = length, value = value })
+          msg_pos = msg_pos + length
+          local value, length = unpack_int(data, msg_pos+1)
+          table.insert(player, { name = "Spec/Player/Bot", start = msg_pos, size = length, value = value })
+          msg_pos = msg_pos + length
+          player.size = msg_pos - player.start
+          table.insert(tree, player)
+        end
+      end
 
-      local name = tvb(pos):stringz()
-      stub:add(tvb(pos, tvb(pos):strsize()), "Name: " .. name)
-      pos = pos + tvb(pos):strsize()
-
-      local hostname = tvb(pos):stringz()
-      stub:add(tvb(pos, tvb(pos):strsize()), "Hostname: " .. hostname)
-      pos = pos + tvb(pos):strsize()
-
-      local map = tvb(pos):stringz()
-      stub:add(tvb(pos, tvb(pos):strsize()), "Map: " .. map)
-      pos = pos + tvb(pos):strsize()
-
-      local gametype = tvb(pos):stringz()
-      stub:add(tvb(pos, tvb(pos):strsize()), "Gametype: " .. gametype)
-      pos = pos + tvb(pos):strsize()
+      tree_to_treeitem(tree, stub, tvb, 9, true)
     elseif packet_header == Const.PACKET_GETLIST then
       local stub = stub:add(tvb(9), "Get list packet")
     elseif packet_header == Const.PACKET_LIST then

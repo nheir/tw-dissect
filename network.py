@@ -505,5 +505,17 @@ System = [
 		NetIntAny("GameTick"),
 		NetIntAny("Relative DeltaTick")
 	]),
-	NetSys("ServerInfo", [])
+	NetSys("ServerInfo", [
+		NetString("Version"),
+		NetString("Name"),
+		NetString("Hostname"),
+		NetString("Map"),
+		NetString("Gametype"),
+		NetIntAny("Has Password"),
+		NetIntAny("Skill Level"),
+		NetIntAny("Num players"),
+		NetIntAny("Max players"),
+		NetIntAny("Num clients"),
+		NetIntAny("Max clients")
+	])
 ]
