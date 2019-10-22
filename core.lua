@@ -148,11 +148,17 @@ function tw_proto.dissector(tvb,pinfo,tree)
           local sys = bit.band(msg_sys, 1)
           stub:add(tvb(pos + header_size, length), ("Type: %d, System: %d"):format(msg,sys))
 
-          local tree = {}
+          local tree = {start = header_size + length, size = size - length}
           if sys == 1 and case_net_msg_system[msg] then
-            tree = case_net_msg_system[msg](data, header_size + length, size - length)
+            tree = case_net_msg_system[msg](data, tree.start, tree.size)
+            if post_netmsg_system[msg] then
+              post_netmsg_system[msg](tree, data)
+            end
           elseif sys == 0 and case_net_msg_type[msg] then
-            tree = case_net_msg_type[msg](data, header_size + length, size - length)
+            tree = case_net_msg_type[msg](data, tree.start, tree.size)
+            if post_netmsg_type[msg] then
+              post_netmsg_type[msg](tree, data)
+            end
           end
 
           if tree.name then

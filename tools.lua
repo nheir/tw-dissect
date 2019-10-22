@@ -28,7 +28,7 @@ end
 
 function tree_to_treeitem(tree, stub, tvb, offset, default)
   local stub = stub:add(tvb(offset + tree.start, tree.size), tree.name)
-  local last_pos = 0
+  local last_pos = tree.start
   for _, field in ipairs(tree) do
     if type(field.value) == 'table' then
       tree_tp_treeitem(field, stub, tvb, offset, default)
