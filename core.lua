@@ -150,12 +150,10 @@ function tw_proto.dissector(tvb,pinfo,tree)
 
           local tree = {}
           if sys == 1 and case_net_msg_system[msg] then
-            tree = case_net_msg_system[msg](data, header_size + length)
+            tree = case_net_msg_system[msg](data, header_size + length, size - length)
           elseif sys == 0 and case_net_msg_type[msg] then
-            tree = case_net_msg_type[msg](data, header_size + length)
+            tree = case_net_msg_type[msg](data, header_size + length, size - length)
           end
-          tree.start = header_size + length
-          tree.size = size - length
 
           if tree.name then
             tree_to_treeitem(tree, stub, tvb, pos, true)

@@ -254,8 +254,8 @@ class NetMessage(NetObject):
 		self.enum_name = "NETMSGTYPE_%s" % self.name.upper()
 	def emit_unpack(self):
 		lines = []
-		lines += ["[Const.%s] = function (data, offset)" % self.enum_name]
-		lines += ["\tlocal tree = { name = '%s' }" % (self.name,)]
+		lines += ["[Const.%s] = function (data, offset, size)" % self.enum_name]
+		lines += ["\tlocal tree = { name = '%s', start = offset, size = size }" % (self.name,)]
 		lines += ["\tlocal msg_pos = offset"]
 		for v in self.variables:
 			lines += ["\t"+line for line in v.emit_unpack()]
@@ -271,8 +271,8 @@ class NetSys(NetObject):
 		self.enum_name = "NETMSG_%s" % self.name.upper()
 	def emit_unpack(self):
 		lines = []
-		lines += ["[Const.%s] = function (data, offset)" % self.enum_name]
-		lines += ["\tlocal tree = { name = '%s' }" % (self.name,)]
+		lines += ["[Const.%s] = function (data, offset, size)" % self.enum_name]
+		lines += ["\tlocal tree = { name = '%s', start = offset, size = size }" % (self.name,)]
 		lines += ["\tlocal msg_pos = offset"]
 		for v in self.variables:
 			lines += ["\t"+line for line in v.emit_unpack()]
