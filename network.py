@@ -297,7 +297,9 @@ Messages = [
 
 	NetMessage("Sv_VoteClearOptions", []),
 
-	NetMessage("Sv_VoteOptionListAdd", []),
+	NetMessage("Sv_VoteOptionListAdd", [
+		NetIntAny("NumOptions")
+	]),
 
 	NetMessage("Sv_VoteOptionAdd", [
 		NetStringStrict("m_pDescription"),

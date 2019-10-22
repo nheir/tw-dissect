@@ -16,6 +16,15 @@ local post_netmsg_system = {
 }
 
 local post_netmsg_type = {
+	[Const.NETMSGTYPE_SV_VOTEOPTIONLISTADD] = function(tree, data)
+		local num_options = tree[1].value
+		local msg_pos = tree[1].start + tree[1].size
+		for i=1,num_options do
+			local value, next_pos = Struct.unpack("s", data, msg_pos+1)
+			table.insert(tree, { name = string.format("Option[%d]", i-1), start = msg_pos, size = next_pos - msg_pos - 1, value = value })
+			msg_pos = next_pos-1
+		end
+	end,
 	[Const.NETMSGTYPE_SV_TUNEPARAMS] = function(tree, data)
 		local msg_pos = tree.start
 		for _,k in ipairs{
