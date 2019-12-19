@@ -18,3 +18,6 @@ Then to (re)load it, Menu -> Analyse -> Reload Lua Plugins.
 There is a [dissector from 2015](https://github.com/fstd/wireshark/blob/twdis/epan/dissectors/packet-tw.c) written by [fstd](https://github.com/fstd) for the 0.6 protocol.
 It is written in C and based on an outdated wireshark base.
 There is a port to the new wireshark version with even less functionallity and a [binary release](https://github.com/ChillerDragon/wireshark/releases).
+
+
+[libtw2](https://github.com/heinrich5991/libtw2) by [heinrich5991](https://github.com/heinrich5991) also has a [dissector written in rust](https://github.com/heinrich5991/libtw2/tree/master/wireshark-dissector).
