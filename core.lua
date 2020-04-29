@@ -87,6 +87,26 @@ function tw_proto.dissector(tvb,pinfo,tree)
         stub:add(tvb(pos,18), string.format('%s:%d', ip, port))
         pos = pos + 18
       end
+    elseif packet_header == Const.PACKET_HEARTBEAT then
+      local stub = stub:add(tvb(9), "Heartbeet packet")
+      local port = tvb(17,2):uint()
+      stub:add(tvb(17,2), string.format('Port: %d', port))
+    elseif packet_header == Const.PACKET_GETCOUNT then
+      local stub = stub:add(tvb(9), "Get Count packet")
+    elseif packet_header == Const.PACKET_COUNT then
+      local stub = stub:add(tvb(9), "Count packet")
+      local count = tvb(17,2):uint()
+      stub:add(tvb(17,2), string.format('Count: %d', count))
+    elseif packet_header == Const.PACKET_FWCHECK then
+      local stub = stub:add(tvb(9), "FwCheck packet")
+    elseif packet_header == Const.PACKET_FWRESPONSE then
+      local stub = stub:add(tvb(9), "FwResponse packet")
+    elseif packet_header == Const.PACKET_FWOK then
+      local stub = stub:add(tvb(9), "FwOk packet")
+    elseif packet_header == Const.PACKET_FWERROR then
+      local stub = stub:add(tvb(9), "FwError packet")
+    else
+      local stub = stub:add(tvb(9), "Unrecognized packet")
     end
   else
     local ack = bit.band(tvb(0,2):uint(), 0x03ff)

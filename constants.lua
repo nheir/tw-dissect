@@ -1,11 +1,22 @@
 -- Constants
 local Const = {
   NETMSG_NULL=0,
-  PACKET_GETLIST = "\xff\xff\xff\xffreq2",
-  PACKET_LIST =    "\xff\xff\xff\xfflis2",
 
-  PACKET_GETINFO = "\xff\xff\xff\xffgie3",
-  PACKET_INFO =    "\xff\xff\xff\xffinf3",
+  PACKET_HEARTBEAT  = "\xff\xff\xff\xffbea2",
+
+  PACKET_GETLIST    = "\xff\xff\xff\xffreq2",
+  PACKET_LIST       = "\xff\xff\xff\xfflis2",
+
+  PACKET_GETCOUNT   = "\xff\xff\xff\xffcou2",
+  PACKET_COUNT      = "\xff\xff\xff\xffsiz2",
+
+  PACKET_GETINFO    = "\xff\xff\xff\xffgie3",
+  PACKET_INFO       = "\xff\xff\xff\xffinf3",
+
+  PACKET_FWCHECK    = "\xff\xff\xff\xfffw??",
+  PACKET_FWRESPONSE = "\xff\xff\xff\xfffw!!",
+  PACKET_FWOK       = "\xff\xff\xff\xfffwok",
+  PACKET_FWERROR    = "\xff\xff\xff\xfffwer",
 }
 for i,k in ipairs{
     -- NETMSG_NULL=0,
