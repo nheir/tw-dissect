@@ -2,17 +2,10 @@
 tw_proto=Proto("Teeworlds", "Teeworlds")
 
 function tw_proto.dissector(tvb,pinfo,tree)
-  local code
   local pos
-  local subtree
-  local branch
   local stub
-  local length
-  local unknown
-  local i
 
   pinfo.cols.protocol = "TW"
-  unknown=0
   pos=0
   stub=tree:add(tw_proto, tvb(), "Teeworlds")
 
@@ -88,7 +81,7 @@ function tw_proto.dissector(tvb,pinfo,tree)
         pos = pos + 18
       end
     elseif packet_header == Const.PACKET_HEARTBEAT then
-      local stub = stub:add(tvb(9), "Heartbeet packet")
+      local stub = stub:add(tvb(9), "Heartbeat packet")
       local port = tvb(17,2):uint()
       stub:add(tvb(17,2), string.format('Port: %d', port))
     elseif packet_header == Const.PACKET_GETCOUNT then
@@ -207,8 +200,8 @@ function tw_proto.dissector(tvb,pinfo,tree)
   end
 end
 
-prot_table = DissectorTable.get("udp.port")
-prot_table:add(8303,tw_proto)
-prot_table:add(8305,tw_proto)
-prot_table:add(8283,tw_proto)
+udp_table = DissectorTable.get("udp.port")
+udp_table:add(8303,tw_proto)
+udp_table:add(8283,tw_proto)
+udp_table:add(8284,tw_proto)
 -- Dissector End
