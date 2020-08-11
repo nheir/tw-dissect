@@ -77,6 +77,14 @@ Flags = [
 	CoreEventFlags,
 ]
 
+print("""
+function string.tohex(str)
+    return (str:gsub('.', function (c)
+        return string.format('%02x', string.byte(c))
+    end))
+end
+""")
+
 Objects = [
 
 	NetObject("PlayerInput", [
@@ -461,7 +469,7 @@ System = [
 		NetIntAny("Map size"),
 		NetIntAny("Map chunk per request"),
 		NetIntAny("Map chunk size"),
-		NetRawString("Map Sha256", 32)
+		NetHex("Map Sha256", 32)
 	]),
 	NetSys("Request_Map_Data", []),
 	NetSys("Map_Data", []),

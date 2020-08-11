@@ -311,6 +311,17 @@ class NetRawString(NetVariable):
 		lines += ['msg_pos = msg_pos + %d' % self.size]
 		return lines
 
+class NetHex(NetVariable):
+	def __init__(self, name, size):
+		NetVariable.__init__(self, name)
+		self.size = size
+	def emit_unpack(self):
+		lines = []
+		lines += ['local value = data:sub(msg_pos+1, msg_pos+%d)' % self.size]
+		lines += ['table.insert(tree, { name = "%s", start = msg_pos, size = %d, value = (value):tohex() })' % (self.name, self.size)]
+		lines += ['msg_pos = msg_pos + %d' % self.size]
+		return lines
+
 class NetStringStrict(NetVariable):
 	# dont do sanitize
 	def emit_unpack(self):
