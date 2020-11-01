@@ -41,4 +41,10 @@ function tree_to_treeitem(tree, stub, tvb, offset, default)
     stub:add(tvb(offset + last_pos, tree.start + tree.size - last_pos), ("Data [%d bytes]"):format(tree.start + tree.size - last_pos))
   end
 end
+
+function string.tohex(str)
+  return (str:gsub('.', function (c)
+    return string.format('%02x', string.byte(c))
+  end))
+end
 -- Tools end

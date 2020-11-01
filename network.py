@@ -461,7 +461,7 @@ System = [
 		NetIntAny("Map size"),
 		NetIntAny("Map chunk per request"),
 		NetIntAny("Map chunk size"),
-		NetRawString("Map Sha256", 32)
+		NetHex("Map Sha256", 32)
 	]),
 	NetSys("Request_Map_Data", []),
 	NetSys("Map_Data", []),
